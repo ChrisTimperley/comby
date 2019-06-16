@@ -39,7 +39,7 @@ module Make (Syntax : Syntax.S) = struct
             let escape = Syntax.escape_char
           end)
         in
-        M.base_string_literal >>= fun contents ->
+        let* contents = M.base_string_literal in
         return (f ~contents ~left_delimiter:delimiter ~right_delimiter:delimiter))
     |> choice
 
@@ -52,7 +52,7 @@ module Make (Syntax : Syntax.S) = struct
             let right_delimiter = right_delimiter
           end)
         in
-        M.base_string_literal >>= fun contents ->
+        let* contents = M.base_string_literal in
         return (f ~contents ~left_delimiter ~right_delimiter))
     |> choice
 
@@ -88,9 +88,10 @@ module Make (Syntax : Syntax.S) = struct
 
   let escapable_literal_grammar ~right_delimiter =
     (attempt
-       (char Syntax.escape_char
-        >> string right_delimiter
-        >>= fun s -> return (Format.sprintf "%c%s" Syntax.escape_char s))
+       (
+         let* s = char Syntax.escape_char >> string right_delimiter
+         in return (Format.sprintf "%c%s" Syntax.escape_char s)
+       )
     )
     <|>
     (attempt
@@ -118,9 +119,10 @@ module Make (Syntax : Syntax.S) = struct
 
   let generate_spaces_parser () =
     (* at least a space followed by comments and spaces *)
-    (spaces1
-     >> many comment_parser << spaces
-     >>= fun result -> f result)
+    (
+      let* result = spaces1 >> many comment_parser << spaces in
+      f result
+    )
     <|>
     (* This case not covered by tests, may not be needed *)
     (many1 comment_parser << spaces >>= fun result -> f result)
