@@ -140,17 +140,20 @@ module Make (Syntax : Syntax.S) = struct
 
   (** All code can have comments interpolated *)
   let generate_string_token_parser str : ('c, _) parser =
-    many comment_parser
-    >> string str
-    >> many comment_parser
-    >>= fun result -> f result
+    let* result =
+      many comment_parser
+      >> string str
+      >> many comment_parser
+    in
+    f result
 
   let greedy_hole_parser _s =
     string ":[" >> (many (alphanum <|> char '_') |>> String.of_char_list) << string "]"
 
   let single_hole_parser _s =
     string ":[" >>
-    many (is_not (char '[')) >>= fun including ->
+    many (
+      is_not (char '[')) >>= fun including ->
     string "[" >> (many (alphanum <|> char '_') |>> String.of_char_list) << string "]"
     >>= fun id ->
     (option (
@@ -366,13 +369,13 @@ module Make (Syntax : Syntax.S) = struct
 
   and generate_outer_delimiter_parsers ~left_delimiter ~right_delimiter s =
     (let* p_list = generate_parsers s in (turn_holes_into_matchers_for_this_level ~left_delimiter ~right_delimiter
-        ([ string left_delimiter
-           >>= fun _ -> f [left_delimiter]]
-         @ p_list
-         @ [ string right_delimiter
-             >>= fun _ -> f [right_delimiter]])
-      |> sequence_chain)
-     |> return
+                                            ([ string left_delimiter
+                                               >>= fun _ -> f [left_delimiter]]
+                                             @ p_list
+                                             @ [ string right_delimiter
+                                                 >>= fun _ -> f [right_delimiter]])
+                                          |> sequence_chain)
+                                         |> return
     ) s
 
   let general_parser_generator s =
