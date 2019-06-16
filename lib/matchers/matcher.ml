@@ -7,6 +7,8 @@ open Range
 open Location
 open Types
 
+let (let*) = bind
+
 let configuration_ref = ref (Configuration.create ())
 let weaken_delimiter_hole_matching = false
 
