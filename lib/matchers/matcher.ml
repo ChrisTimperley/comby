@@ -125,7 +125,7 @@ module Make (Syntax : Syntax.S) = struct
     )
     <|>
     (* This case not covered by tests, may not be needed *)
-    (many1 comment_parser << spaces >>= fun result -> f result)
+    (let* result = many1 comment_parser << spaces in f result)
 
   let sequence_chain (plist : ('c, Match.t) parser sexp_list) : ('c, Match.t) parser =
     List.fold plist ~init:(return Unit) ~f:(>>)
@@ -154,8 +154,7 @@ module Make (Syntax : Syntax.S) = struct
     string "[" >> (many (alphanum <|> char '_') |>> String.of_char_list) << string "]"
     >>= fun id ->
     (option (
-        (char '\\' >> char 'n' >>= fun _ ->
-         return '\n')
+        (let* _ = char '\\' >> char 'n' in return '\n')
         <|>
         is_not (char ']')))
     >>= fun until_char ->
@@ -366,8 +365,7 @@ module Make (Syntax : Syntax.S) = struct
     <|> ((many1 (is_not reserved) |>> String.of_char_list) |>> generate_string_token_parser)
 
   and generate_outer_delimiter_parsers ~left_delimiter ~right_delimiter s =
-    (generate_parsers s >>= fun p_list ->
-     (turn_holes_into_matchers_for_this_level ~left_delimiter ~right_delimiter
+    (let* p_list = generate_parsers s in (turn_holes_into_matchers_for_this_level ~left_delimiter ~right_delimiter
         ([ string left_delimiter
            >>= fun _ -> f [left_delimiter]]
          @ p_list
